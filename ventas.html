@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRUD Ventas</title>
+<title>Ventas - Firebase</title>
 
 <style>
 body{
@@ -81,9 +81,12 @@ margin-top:10px;
 <body>
 
 <div class="container">
-<h1>CRUD de Ventas</h1>
+<h1>CRUD de Ventas - Firebase</h1>
 
 <input type="hidden" id="id">
+
+<label>Cliente</label>
+<input type="text" id="cliente">
 
 <label>Producto</label>
 <input type="text" id="producto">
@@ -100,6 +103,7 @@ margin-top:10px;
 <thead>
 <tr>
 <th>ID</th>
+<th>Cliente</th>
 <th>Producto</th>
 <th>Precio</th>
 <th>Cantidad</th>
@@ -116,112 +120,139 @@ margin-top:10px;
 
 </div>
 
-<script>
-let ventas = JSON.parse(localStorage.getItem('ventas')) || [];
+<script type="module">
 
-function guardarVenta(){
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+updateDoc
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-let id = document.getElementById('id').value;
-let producto = document.getElementById('producto').value;
-let precio = document.getElementById('precio').value;
-let cantidad = document.getElementById('cantidad').value;
+const firebaseConfig = {
+  apiKey: "AIzaSyD-Nvye_LfZYtKjmQpKze8vFe6413_YI0M",
+  authDomain: "ventas-app-pro-e79d1.firebaseapp.com",
+  projectId: "ventas-app-pro-e79d1",
+  storageBucket: "ventas-app-pro-e79d1.firebasestorage.app",
+  messagingSenderId: "626312936837",
+  appId: "1:626312936837:web:bb8ecd7923e20dc623d8ec"
+};
+  
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-if(producto === '' || precio === '' || cantidad === ''){
+let editando = null;
+
+window.guardarVenta = async () => {
+
+const cliente = document.getElementById('cliente').value;
+const producto = document.getElementById('producto').value;
+const precio = document.getElementById('precio').value;
+const cantidad = document.getElementById('cantidad').value;
+
+if(cliente === '' || producto === '' || precio === '' || cantidad === ''){
 alert('Completa todos los campos');
 return;
 }
 
-if(id === ''){
+if(editando){
 
-let venta = {
-id: Date.now(),
+await updateDoc(doc(db,"ventas",editando),{
+cliente,
 producto,
 precio: parseFloat(precio),
-cantidad: parseInt(cantidad)
-};
+cantidad: parseInt(cantidad),
+total: precio * cantidad,
+fecha: new Date()
+});
 
-ventas.push(venta);
+editando = null;
 
 }else{
 
-let index = ventas.findIndex(v => v.id == id);
-
-ventas[index].producto = producto;
-ventas[index].precio = parseFloat(precio);
-ventas[index].cantidad = parseInt(cantidad);
+await addDoc(collection(db,"ventas"),{
+cliente,
+producto,
+precio: parseFloat(precio),
+cantidad: parseInt(cantidad),
+total: precio * cantidad,
+fecha: new Date()
+});
 
 }
-
-localStorage.setItem('ventas', JSON.stringify(ventas));
 
 limpiar();
 mostrarVentas();
+
 }
 
-function mostrarVentas(){
+async function mostrarVentas(){
 
-let tabla = document.getElementById('tablaVentas');
+const tabla = document.getElementById('tablaVentas');
 tabla.innerHTML = '';
+
+const querySnapshot = await getDocs(collection(db,"ventas"));
 
 let totalGeneral = 0;
 
-ventas.forEach(venta => {
+querySnapshot.forEach((docu)=>{
 
-let total = venta.precio * venta.cantidad;
-totalGeneral += total;
+let data = docu.data();
 
 let fila = `
 <tr>
-<td>${venta.id}</td>
-<td>${venta.producto}</td>
-<td>$${venta.precio}</td>
-<td>${venta.cantidad}</td>
-<td>$${total}</td>
-<td class="acciones">
-<button class="editar" onclick="editarVenta(${venta.id})">Editar</button>
-<button class="eliminar" onclick="eliminarVenta(${venta.id})">Eliminar</button>
+<td>${docu.id}</td>
+<td>${data.cliente}</td>
+<td>${data.producto}</td>
+<td>$${data.precio}</td>
+<td>${data.cantidad}</td>
+<td>$${data.total}</td>
+<td>
+<button class="editar" onclick="editar('${docu.id}','${data.cliente}','${data.producto}','${data.precio}','${data.cantidad}')">Editar</button>
+<button class="eliminar" onclick="eliminar('${docu.id}')">Eliminar</button>
 </td>
 </tr>
 `;
 
 
+
 tabla.innerHTML += fila;
 
+
+totalGeneral += data.total;
+
 });
+
 
 document.getElementById('totalGeneral').innerText = totalGeneral;
 
 }
 
-function editarVenta(id){
+window.editar = (id,cliente,producto,precio,cantidad)=>{
 
-let venta = ventas.find(v => v.id == id);
+editando = id;
 
-
-document.getElementById('id').value = venta.id;
-document.getElementById('producto').value = venta.producto;
-document.getElementById('precio').value = venta.precio;
-document.getElementById('cantidad').value = venta.cantidad;
+document.getElementById('cliente').value = cliente;
+document.getElementById('producto').value = producto;
+document.getElementById('precio').value = precio;
+document.getElementById('cantidad').value = cantidad;
 
 }
 
-function eliminarVenta(id){
+window.eliminar = async(id)=>{
 
-if(confirm('¿Eliminar venta?')){
-
-ventas = ventas.filter(v => v.id != id);
-
-localStorage.setItem('ventas', JSON.stringify(ventas));
-
+await deleteDoc(doc(db,"ventas",id));
 mostrarVentas();
-
-}
 
 }
 
 function limpiar(){
 
-document.getElementById('id').value = '';
+document.getElementById('cliente').value = '';
 document.getElementById('producto').value = '';
 document.getElementById('precio').value = '';
 document.getElementById('cantidad').value = '';
