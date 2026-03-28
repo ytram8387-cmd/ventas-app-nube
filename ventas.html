@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRUD Ventas</title>
+
+<style>
+body{
+font-family: Arial, Helvetica, sans-serif;
+background:#f5f5f5;
+padding:20px;
+}
+
+h1{
+text-align:center;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+input, button{
+padding:10px;
+margin:5px 0;
+width:100%;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
+button{
+background:#007BFF;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+table{
+width:100%;
+border-collapse: collapse;
+margin-top:20px;
+}
+
+th, td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:center;
+}
+
+.acciones button{
+width:auto;
+padding:5px 10px;
+margin:2px;
+}
+
+.eliminar{
+background:#dc3545;
+}
+
+.editar{
+background:#28a745;
+}
+
+.total{
+text-align:right;
+font-size:18px;
+margin-top:10px;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+<h1>CRUD de Ventas</h1>
+
+<input type="hidden" id="id">
+
+<label>Producto</label>
+<input type="text" id="producto">
+
+<label>Precio</label>
+<input type="number" id="precio">
+
+<label>Cantidad</label>
+<input type="number" id="cantidad">
+
+<button onclick="guardarVenta()">Guardar Venta</button>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Producto</th>
+<th>Precio</th>
+<th>Cantidad</th>
+<th>Total</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tablaVentas"></tbody>
+</table>
+
+<div class="total">
+<strong>Total Ventas: $ <span id="totalGeneral">0</span></strong>
+</div>
+
+</div>
+
+<script>
+let ventas = JSON.parse(localStorage.getItem('ventas')) || [];
+
+function guardarVenta(){
+
+let id = document.getElementById('id').value;
+let producto = document.getElementById('producto').value;
+let precio = document.getElementById('precio').value;
+let cantidad = document.getElementById('cantidad').value;
+
+if(producto === '' || precio === '' || cantidad === ''){
+alert('Completa todos los campos');
+return;
+}
+
+if(id === ''){
+
+let venta = {
+id: Date.now(),
+producto,
+precio: parseFloat(precio),
+cantidad: parseInt(cantidad)
+};
+
+ventas.push(venta);
+
+}else{
+
+let index = ventas.findIndex(v => v.id == id);
+
+ventas[index].producto = producto;
+ventas[index].precio = parseFloat(precio);
+ventas[index].cantidad = parseInt(cantidad);
+
+}
+
+localStorage.setItem('ventas', JSON.stringify(ventas));
+
+limpiar();
+mostrarVentas();
+}
+
+function mostrarVentas(){
+
+let tabla = document.getElementById('tablaVentas');
+tabla.innerHTML = '';
+
+let totalGeneral = 0;
+
+ventas.forEach(venta => {
+
+let total = venta.precio * venta.cantidad;
+totalGeneral += total;
+
+let fila = `
+<tr>
+<td>${venta.id}</td>
+<td>${venta.producto}</td>
+<td>$${venta.precio}</td>
+<td>${venta.cantidad}</td>
+<td>$${total}</td>
+<td class="acciones">
+<button class="editar" onclick="editarVenta(${venta.id})">Editar</button>
+<button class="eliminar" onclick="eliminarVenta(${venta.id})">Eliminar</button>
+</td>
+</tr>
+`;
+
+
+tabla.innerHTML += fila;
+
+});
+
+document.getElementById('totalGeneral').innerText = totalGeneral;
+
+}
+
+function editarVenta(id){
+
+let venta = ventas.find(v => v.id == id);
+
+
+document.getElementById('id').value = venta.id;
+document.getElementById('producto').value = venta.producto;
+document.getElementById('precio').value = venta.precio;
+document.getElementById('cantidad').value = venta.cantidad;
+
+}
+
+function eliminarVenta(id){
+
+if(confirm('¿Eliminar venta?')){
+
+ventas = ventas.filter(v => v.id != id);
+
+localStorage.setItem('ventas', JSON.stringify(ventas));
+
+mostrarVentas();
+
+}
+
+}
+
+function limpiar(){
+
+document.getElementById('id').value = '';
+document.getElementById('producto').value = '';
+document.getElementById('precio').value = '';
+document.getElementById('cantidad').value = '';
+
+}
+
+mostrarVentas();
+
+</script>
+
+</body>
+</html>
