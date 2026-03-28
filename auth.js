@@ -32,6 +32,18 @@ window.registrar = async () => {
   }
 };
 
+const loginBtn = document.getElementById("loginBtn");
+
+loginBtn.addEventListener("click", login);
+
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  console.log("Email:", email);
+  console.log("Password:", password);
+
+
 // LOGIN
 window.login = async () => {
   const email = document.getElementById("email").value;
